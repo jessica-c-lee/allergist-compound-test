@@ -23,8 +23,8 @@
 
   var groups = ["NA", "NA"];
   let group = "" + jsPsych.randomization.sampleWithReplacement(groups, 1) + "";
-  var samples = ["MTurk", "SONA", "SONA-online"];
-  let sample = samples[2];
+  var samples = ["MTurk", "SONA", "SONA-online", "Prolific"];
+  let sample = samples[3];
   var completion_code = (Math.floor(Math.random() * 99999 * 397)).toString();
   var fc_cbs = ["A1B2-A2B1", "B2A1-B1A2", "A2B1-A1B2", "B1A2-B2A1"];
   let fc_cb = "" + jsPsych.randomization.sampleWithReplacement(fc_cbs, 1) + "";
@@ -147,7 +147,7 @@
   var consent_text = [
     '<img src= "./img/logo.png"></img>' +
     '<p>Welcome to the experiment!</p>' +
-    '<p>Before you begin, please read the information sheet carefully (you can download the pdf <a href="https://jessicaleephd.files.wordpress.com/2020/03/pis_sona-1-15.pdf" target="_blank">here</a>).</p>' +
+    '<p>Before you begin, please read the information sheet carefully (you can download the pdf <a href="https://jessicaleephd.files.wordpress.com/2020/08/3136_pis_prolific.pdf" target="_blank">here</a>).</p>' +
     '<br>' +
     '<p><b>PARTICIPANT CONSENT</b></p>' +
     '<img src="./img/PIS1.png">' +
@@ -169,12 +169,18 @@
   if (sample === "MTurk") {
     var sample_insert = [
       '<p>If anything goes wrong during the experiment, please take a screenshot and notify the requester. Do <b>not</b> press the BACK button or quit out of the program. This will make it hard for you to get paid.</p>' +
-      '<p>Please complete the experiment in ONE sitting on a computer (not a phone or tablet).</p>' +
+      '<p>Please complete the experiment in ONE sitting on a computer (not a phone or tablet). Please turn off anything that may distract you during the task. </p>' +
       '<p>If you complete the task, you will get your payment no matter what. Please take your time and think about your predictions and judgements seriously. </p>'
+    ]
+  } else if (sample === "Prolific") {
+    var sample_insert = [
+      '<p>If anything goes wrong during the experiment, please take a screenshot and notify the requester. Do <b>not</b> press the BACK button or quit out of the program.</p>' +
+      '<p>Please complete the experiment in ONE sitting on a computer (not a phone or tablet). Please turn off anything that may distract you during the task. </p>' +
+      '<p>Please take your time and think about your predictions and judgements seriously. </p>'
     ]
   } else if (sample === "SONA-online") {
     var sample_insert = [
-      '<p>Please complete the experiment in ONE sitting on a computer (not a phone or tablet).</p>'
+      '<p>Please complete the experiment in ONE sitting on a computer (not a phone or tablet). Please turn off anything that may distract you during the task. </p>'
     ];
   } else {
     var sample_insert = '';
@@ -919,34 +925,49 @@
   timeline.push(test_ins_block);
   timeline.push(test_block);
   timeline.push(fc_test_block);
-  timeline.push(debrief_block);
-  timeline.push(contact_block);
+  if (sample === "SONA-online") {
+    timeline.push(debrief_block);
+    timeline.push(contact_block);
+  }
 
   //----------------------------------------------------------------------------
 	/* start experiment */
 
   jatos.onLoad(function() {
 
-    // subject info
-    var finish_url_base = jatos.studyJsonInput.finish_url_base; // get completion URL from json input under "Properties"
-    var sona_id = jatos.urlQueryParameters.id;
-    if (sona_id === undefined) {
-      sona_id = null;
-    }
-    var completion_url = null;
-    if (sona_id) {
-      // if sona ID, form the URL for auto-crediting
-      completion_url = finish_url_base + sona_id;
-    }
-    else {
-      completion_url = "https://unsw-psy.sona-systems.com";
-    }
-
     if (sample === "MTurk") {
+
+      var sona_id = null;
+
       var finish_msg = 'All done!<br><br>Your completion code is <span id="completion_code" style="font-weight:bold;font-size:130%">' + completion_code + '</span>. To receive payment for the HIT, return to the Amazon Mechanical Turk page and enter this code. Please contact us if something goes wrong and we\'ll fix it as quickly as possible.';
+
+    } else if (sample === "Prolific") {
+
+      var completion_url = 'https://app.prolific.co/submissions/complete?cc=236D15E6';
+      
+      var finish_msg = 'All done! Click <a href="' + completion_url + '">here</a> to be returned to Prolific and receive your payment.';
+
     } else if (sample === "SONA") {
+
+      var sona_id = null;
+
       var finish_msg = 'All done! Please let the experimenter know.';
+
     } else if (sample === "SONA-online") {
+
+      // subject info
+      var finish_url_base = jatos.studyJsonInput.finish_url_base; // get completion URL from json input under "Properties"
+      var sona_id = jatos.urlQueryParameters.id;
+      if (sona_id === undefined) {
+        sona_id = null;
+      }
+      var completion_url = null;
+      if (sona_id) { // if sona ID, form the URL for auto-crediting
+        completion_url = finish_url_base + sona_id;
+      } else {
+        completion_url = "https://unsw-psy.sona-systems.com";
+      }
+
       var finish_msg = 'All done! Your Sona ID is ' + sona_id + '. If anything goes wrong, please email us with this ID number. Click <a href="' + completion_url + '">here</a> to be returned to Sona and receive your credit.';
     }
 
@@ -963,7 +984,13 @@
         cue_F1: cue_F1,
         cue_F2: cue_F2,
         cue_F3: cue_F3,
-        cue_F4: cue_F4
+        cue_F4: cue_F4,
+        n_blocks_train: n_blocks_train,
+        n_blocks_train_2: n_blocks_train_2,
+        n_blocks_test: n_blocks_test,
+        iti: iti,
+        feedback_duration: feedback_duration,
+        stagger_slider: stagger_slider
     });
 
   	jsPsych.init({
