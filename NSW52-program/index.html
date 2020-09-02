@@ -174,7 +174,7 @@
     ]
   } else if (sample === "Prolific") {
     var sample_insert = [
-      '<p>If anything goes wrong during the experiment, please take a screenshot and notify the requester. Do <b>not</b> press the BACK button or quit out of the program.</p>' +
+      '<p>If anything goes wrong during the experiment, please take a screenshot and notify the experimenter. Do <b>not</b> press the BACK button or quit out of the program.</p>' +
       '<p>Please complete the experiment in ONE sitting on a computer (not a phone or tablet). Please turn off anything that may distract you during the task. </p>' +
       '<p>Please take your time and think about your predictions and judgements seriously. </p>'
     ]
@@ -619,29 +619,35 @@
     }
   ];
 
-  // randomise test trials
+  // randomise test trials (compound trials first)
+
+  var test_stim_comp_rand = [];
+  var rand_A1B2 = jsPsych.randomization.shuffle(trial_type_A1B2);
+  var rand_A2B1 = jsPsych.randomization.shuffle(trial_type_A2B1);
+  test_stim_comp_rand = test_stim_comp_rand.concat(jsPsych.randomization.shuffle([rand_A1B2[0], rand_A2B1[0]])).concat(jsPsych.randomization.shuffle([rand_A1B2[1], rand_A2B1[1]]));
+
   var dupes_test = true;
   while (dupes_test === true) {
     var block_test;
-    var test_stim_rand = [];
+    var test_stim_el_rand = [];
     for (block_test = 0; block_test < n_blocks_test; block_test++) {
       var rand_A1 = jsPsych.randomization.shuffle(trial_type_A1);
       var rand_A2 = jsPsych.randomization.shuffle(trial_type_A2);
       var rand_B1 = jsPsych.randomization.shuffle(trial_type_B1);
       var rand_B2 = jsPsych.randomization.shuffle(trial_type_B2);
-      var rand_A1B2 = jsPsych.randomization.shuffle(trial_type_A1B2);
-      var rand_A2B1 = jsPsych.randomization.shuffle(trial_type_A2B1);
 
       var test_stim_0 = [
-        rand_A1[0], rand_A2[0], rand_B1[0], rand_B2[0], rand_A1B2[0], rand_A2B1[0]
+        rand_A1[0], rand_A2[0], rand_B1[0], rand_B2[0]
       ];
       var test_stim_1 = [
-        rand_A1[1], rand_A2[1], rand_B1[1], rand_B2[1], rand_A1B2[1], rand_A2B1[1]
+        rand_A1[1], rand_A2[1], rand_B1[1], rand_B2[1]
       ];
-      test_stim_rand = test_stim_rand.concat(jsPsych.randomization.shuffle(test_stim_0)).concat(jsPsych.randomization.shuffle(test_stim_1));
+      test_stim_el_rand = test_stim_el_rand.concat(jsPsych.randomization.shuffle(test_stim_0)).concat(jsPsych.randomization.shuffle(test_stim_1));
     }
-    dupes_test = CheckDupes(test_stim_rand);
+    dupes_test = CheckDupes(test_stim_el_rand);
   }
+
+  var test_stim_rand = test_stim_comp_rand.concat(test_stim_el_rand);
 
   //--------------------------------------------------------------------------
   /* define the stimuli for the 2AFC compound test */
@@ -937,11 +943,16 @@
 
     if (sample === "MTurk") {
 
-      var sona_id = null;
+      var subj_id = jatos.urlQueryParameters.workerId;
 
       var finish_msg = 'All done!<br><br>Your completion code is <span id="completion_code" style="font-weight:bold;font-size:130%">' + completion_code + '</span>. To receive payment for the HIT, return to the Amazon Mechanical Turk page and enter this code. Please contact us if something goes wrong and we\'ll fix it as quickly as possible.';
 
     } else if (sample === "Prolific") {
+
+      var subj_id = jatos.urlQueryParameters.PROLIFIC_PID;
+      if (subj_id === undefined) {
+        subj_id = null;
+      }
 
       var completion_url = 'https://app.prolific.co/submissions/complete?cc=236D15E6';
       
@@ -957,24 +968,24 @@
 
       // subject info
       var finish_url_base = jatos.studyJsonInput.finish_url_base; // get completion URL from json input under "Properties"
-      var sona_id = jatos.urlQueryParameters.id;
-      if (sona_id === undefined) {
-        sona_id = null;
+      var subj_id = jatos.urlQueryParameters.id;
+      if (subj_id === undefined) {
+        subj_id = null;
       }
       var completion_url = null;
-      if (sona_id) { // if sona ID, form the URL for auto-crediting
-        completion_url = finish_url_base + sona_id;
+      if (subj_id) { // if sona ID, form the URL for auto-crediting
+        completion_url = finish_url_base + subj_id;
       } else {
         completion_url = "https://unsw-psy.sona-systems.com";
       }
 
-      var finish_msg = 'All done! Your Sona ID is ' + sona_id + '. If anything goes wrong, please email us with this ID number. Click <a href="' + completion_url + '">here</a> to be returned to Sona and receive your credit.';
+      var finish_msg = 'All done! Your Sona ID is ' + subj_id + '. If anything goes wrong, please email us with this ID number. Click <a href="' + completion_url + '">here</a> to be returned to Sona and receive your credit.';
     }
 
     // add properties to each trial in the jsPsych data
     jsPsych.data.addProperties({
         group: group,
-        sona_id: sona_id,
+        subj_id: subj_id,
         completion_code: completion_code,
         fc_cb: fc_cb,
         cue_A1: cue_A1,
